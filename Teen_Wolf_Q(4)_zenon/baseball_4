@@ -34,3 +34,21 @@ SELECT pos, COUNT(PO), fielding.yearid,
 		WHEN pos = 'C' THEN 'Battery' END AS fielding_grouped
 FROM fielding
 GROUP BY fielding_grouped, fielding.pos, fielding.yearid
+
+WITH grouped_fielding AS (SELECT DISTINCT pos, SUM(PO) AS total_po, fielding.yearid,
+		CASE WHEN pos = 'OF' then 'Outfield'
+			WHEN pos = 'SS' THEN 'Infield'
+			WHEN pos = '1B' THEN 'Infield'
+			WHEN pos = '2B' THEN 'Infield'
+			WHEN pos = '3B' THEN 'Infield'
+			WHEN pos = 'P' THEN 'Battery'
+			WHEN pos = 'C' THEN 'Battery' END AS fielding_grouped
+	FROM fielding 
+	WHERE yearid = (2016)
+	GROUP BY fielding_grouped, fielding.pos, fielding.yearid
+	ORDER BY yearid)
+
+SELECT SUM(total_po), fielding_grouped
+FROM grouped_fielding
+GROUP BY fielding_grouped
+--A: Outfield = 29,560, Battery = 41,424, Infield = 58,934
