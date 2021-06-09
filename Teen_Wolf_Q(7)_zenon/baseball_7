@@ -1,0 +1,91 @@
+/*From 1970 – 2016, what is the largest number of wins for a team that did not win the world series? A1
+What is the smallest number of wins for a team that did win the world series? A2
+Doing this will result in an unusually small number of wins for a world series champion–determine why this is the case. A3
+Then redo your query, excluding the problem year. A4
+How often from 1970 – 2016 was it the case that a team with the most wins also won the world series? A5
+What percentage of the time? A6*/
+
+SELECT *
+FROM people, seriespost
+
+SELECT DISTINCT yearid, teamidwinner
+FROM people, seriespost
+ORDER BY yearid ASC
+
+SELECT DISTINCT yearid, teamidwinner, wins
+FROM seriespost
+ORDER BY yearid ASC
+
+SELECT DISTINCT yearid, teamidwinner, wins
+FROM seriespost
+ORDER BY teamidwinner ASC
+
+SELECT DISTINCT yearid, teamidwinner, wins
+FROM seriespost
+ORDER BY wins ASC
+
+/*From 1970 – 2016, what is the largest number of wins for a team that did not win the world series? A1*/
+
+SELECT teamid, yearid, w, wswin
+FROM teams
+WHERE yearid BETWEEN 1970 AND 2016
+AND wswin = 'N'
+ORDER BY w DESC
+--A1:SEA 201 116 wins and no world series win
+
+/*What is the smallest number of wins for a team that did win the world series? A2
+Doing this will result in an unusually small number of wins for a world series champion–determine why this is the case.A3*/
+
+SELECT teamid, yearid, w, wswin
+FROM teams
+WHERE yearid BETWEEN 1970 AND 2016
+AND wswin = 'Y'
+ORDER BY w ASC
+/*A2/A3: LAN 1981 63 wins and world series win 
+1981 there was a strike from june 12- july-31 over free agent compensation resulting in the season being cut in half 
+and several teams missing out on playoff berths 
+(https://www.usatoday.com/story/sports/mlb/2020/03/15/1981-mlb-season-coronavirus-delay-baseball/5054780002/)*/
+
+/*Then redo your query, excluding the problem year. A4*/
+
+SELECT teamid, yearid, w, wswin
+FROM teams
+WHERE wswin IS NOT null 
+AND yearid <> 1981
+AND yearid BETWEEN 1970 AND 2016
+AND wswin = 'Y'
+ORDER BY w
+--A4: SLN 2006 83 wins and a world series win
+
+/*How often from 1970 – 2016 was it the case that a team with the most wins also won the world series? A5*/
+
+SELECT teamid, yearid, w, wswin
+		--CASE WHEN MAX(w)
+--when largest number of wins results in a world series win for a given year between 1970 AND 2016 return Y or N (LOGIC)
+FROM teams
+WHERE yearid BETWEEN 1970 AND 2016
+AND wswin = 'Y'
+AND w = (SELECT MAX (w) 
+		 FROM teams
+		 GROUP BY yearid)
+ORDER BY yearid DESC 
+
+WITH max_wins AS (SELECT MAX (w) AS max_w, teams.yearid
+		FROM teams
+		GROUP BY teams.yearid, teams.w
+		ORDER BY yearid DESC),
+ws_win AS (SELECT wswin, teams.yearid AS year_id
+		  FROM teams
+		  WHERE yearid BETWEEN 1970 AND 2016
+		  AND wswin = 'Y'
+		  ORDER BY yearid DESC)
+SELECT max_w
+FROM max_wins
+WHERE yearid BETWEEN 1970 AND 2016
+ORDER BY yearid
+
+/*year 1994 has no world series winner?
+due to another strike over a salery cap the last pat of the regualr season and the post season was cancelled*/
+
+/*What percentage of the time? A6*/
+
