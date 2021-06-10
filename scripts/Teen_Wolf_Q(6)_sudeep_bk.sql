@@ -9,5 +9,5 @@
  left join people
  using(playerid)
  where  yearid=2016 and (sb+cs) >20
- order by stolen_success_percentage desc
+ order by (sb::numeric/(sb::numeric+cs::numeric)) desc
  limit 1
