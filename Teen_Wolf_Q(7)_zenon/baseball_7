@@ -28,7 +28,7 @@ ORDER BY wins ASC
 
 SELECT teamid, yearid, w, wswin
 FROM teams
-WHERE yearid BETWEEN 1970 AND 2016
+WHERE yearid >= 1970
 AND wswin = 'N'
 ORDER BY w DESC
 --A1:SEA 201 116 wins and no world series win
@@ -49,10 +49,9 @@ and several teams missing out on playoff berths
 /*Then redo your query, excluding the problem year. A4*/
 
 SELECT teamid, yearid, w, wswin
-FROM teams
-WHERE wswin IS NOT null 
-AND yearid <> 1981
-AND yearid BETWEEN 1970 AND 2016
+FROM teams 
+WHERE yearid <> 1981
+AND yearid >= 1970
 AND wswin = 'Y'
 ORDER BY w
 --A4: SLN 2006 83 wins and a world series win
@@ -60,8 +59,6 @@ ORDER BY w
 /*How often from 1970 – 2016 was it the case that a team with the most wins also won the world series? A5*/
 
 SELECT teamid, yearid, w, wswin
-		--CASE WHEN MAX(w)
---when largest number of wins results in a world series win for a given year between 1970 AND 2016 return Y or N (LOGIC)
 FROM teams
 WHERE yearid BETWEEN 1970 AND 2016
 AND wswin = 'Y'
@@ -70,22 +67,58 @@ AND w = (SELECT MAX (w)
 		 GROUP BY yearid)
 ORDER BY yearid DESC 
 
-WITH max_wins AS (SELECT MAX (w) AS max_w, teams.yearid
+WITH max_wins AS (SELECT MAX (w) AS max_w, yearid
 		FROM teams
-		GROUP BY teams.yearid, teams.w
-		ORDER BY yearid DESC),
-ws_win AS (SELECT wswin, teams.yearid AS year_id
-		  FROM teams
-		  WHERE yearid BETWEEN 1970 AND 2016
-		  AND wswin = 'Y'
-		  ORDER BY yearid DESC)
-SELECT max_w
+		WHERE yearid BETWEEN 1970 AND 2016
+		GROUP BY teams.yearid
+		ORDER BY yearid DESC)
+SELECT max_w, teams.yearid, wswin, name
 FROM max_wins
-WHERE yearid BETWEEN 1970 AND 2016
-ORDER BY yearid
+INNER JOIN teams ON teams.yearid = max_wins.yearid AND max_wins.max_w = teams.w
+WHERE teams.yearid BETWEEN 1970 AND 2016
+ORDER BY teams.yearid DESC
+
+/* WITH max_wins AS 
+(
+    SELECT MAX (w) AS max_w, yearid
+    FROM teams
+    WHERE yearid BETWEEN 1970 AND 2016
+    GROUP BY teams.yearid
+    ORDER BY yearid DESC
+)
+SELECT max_w, teams.yearid, wswin, name
+FROM max_wins
+INNER JOIN teams ON teams.yearid = max_wins.yearid AND max_wins.max_w = teams.w
+WHERE teams.yearid BETWEEN 1970 AND 2016
+ORDER BY teams.yearid DESC */
 
 /*year 1994 has no world series winner?
 due to another strike over a salery cap the last pat of the regualr season and the post season was cancelled*/
 
 /*What percentage of the time? A6*/
 
+/*Select Grade, (Count(Grade)* 100 / (Select Count(*) From MyTable)) as Score
+From MyTable
+Group By Grade */
+
+/* WITH max_wins AS (SELECT MAX (w) AS max_w, yearid
+		FROM teams
+		WHERE yearid BETWEEN 1970 AND 2016
+		GROUP BY teams.yearid
+		ORDER BY yearid DESC)
+SELECT (COUNT(wswin) * 100 / (SELECT COUNT(max_w) FROM max_wins)) AS percent_win
+FROM max_wins
+INNER JOIN teams ON teams.yearid = max_wins.yearid AND max_wins.max_w = teams.w
+WHERE teams.yearid BETWEEN 1970 AND 2016
+GROUP BY teams.w, teams.yearid
+ORDER BY teams.yearid DESC */
+
+With win_percentage as (
+Select yearid, name, wswin, 
+	(Case when w = max(w) over(partition by yearid) and wswin = 'Y' then 1 else 0 end) as max_wins
+from teams
+where yearid >= 1970 and yearid <> 1981
+)
+Select Round(sum(max_wins)::decimal / count(wswin) * 100,1) as max_win_perc
+from win_percentage
+where wswin = 'Y'
